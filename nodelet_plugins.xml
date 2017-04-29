@@ -1,0 +1,12 @@
+<library path="lib/libplanner_nodelet">
+<class name="sim_sample_planning_ros_tool/PlannerNodelet"
+       type="sim_sample_planning_ros_tool::PlannerNodelet" base_class_type="nodelet::Nodelet">
+  <description></description>
+</class>
+</library>
+<library path="lib/libplanner_rviz_nodelet">
+<class name="sim_sample_planning_ros_tool/PlannerRvizNodelet"
+       type="sim_sample_planning_ros_tool::PlannerRvizNodelet" base_class_type="nodelet::Nodelet">
+  <description></description>
+</class>
+</library>

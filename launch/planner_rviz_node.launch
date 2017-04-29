@@ -1,0 +1,9 @@
+<launch>
+
+  <arg name="config" default="$(find sim_sample_planning_ros_tool)/launch/params/planner_rviz_parameters.yaml" />
+
+  <node pkg="sim_sample_planning_ros_tool" type="planner_rviz" name="planner_rviz" output="screen">
+    <rosparam command="load" file="$(arg config)"/>
+  </node>
+
+</launch>

@@ -1,0 +1,5 @@
+<launch>
+  <!-- use this like a normal launch file to set up your test environment. The test tag below is used to launch your unittest node-->
+
+  <test test-name="test_sim_sample_planning_ros_tool" pkg="sim_sample_planning_ros_tool" type="test_sim_sample_planning_ros_tool-test" />
+</launch>

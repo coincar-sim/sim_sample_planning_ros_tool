@@ -1,0 +1,52 @@
+<launch>
+
+   <!-- Arguments that are passed from the top launchfile -->
+   <arg name="vehicle_id" />
+   <arg name="vehicle_ns" />
+
+   <arg name="objects_ground_truth_topic_with_ns" />
+   <arg name="desired_motion_topic_with_ns" />
+   <arg name="perc_egomotion_topic" />
+   <arg name="pred_plan_obj_topic" />
+   <arg name="internal_communication_subns" />
+
+   <arg name="lanelet_map_filename" />
+   <arg name="v_desired" />
+   <arg name="const_offset" />
+
+   <!-- Arguments that are defined here -->
+   <arg name="actor_frequency" value="0.5" />
+
+   <!-- Launch Nodes -->
+   <node pkg="sim_sample_planning_ros_tool" type="planner" name="planner" output="screen" >
+
+   	    <!-- Set Parameters -->
+      	<param name="vehicle_id" value="$(arg vehicle_id)" />
+        <param name="vehicle_ns" value="$(arg vehicle_ns)"/>
+
+        <param name="lanelet_map_filename" value="$(arg lanelet_map_filename)" />
+        <param name="debug_directory" value="$(find sim_sample_planning_ros_tool)/res/debug/" />
+
+        <param name="v_desired" value="$(arg v_desired)" />
+        <param name="const_offset" value="$(arg const_offset)" />
+
+
+        <!-- Remap Topics -->
+        <remap from="default_predicted_objects_in_topic" to="/$(arg vehicle_ns)/$(arg pred_plan_obj_topic)"/>
+        <remap from="default_ego_motion_in_topic" to="/$(arg vehicle_ns)/$(arg perc_egomotion_topic)"/>
+        <remap from="default_desired_motion_out_topic" to="$(arg desired_motion_topic_with_ns)"/>
+   </node>
+
+   <node pkg="sim_sample_planning_ros_tool" type="planner_rviz" name="planner_rviz" output="screen">
+
+        <!-- Set Parameters -->
+        <param name="vehicle_id" value="$(arg vehicle_id)" />
+        <param name="vehicle_ns" value="$(arg vehicle_ns)"/>
+
+        <!-- Remap Topics -->
+        <remap from="default_desired_motion_in_topic" to="$(arg desired_motion_topic_with_ns)"/>
+        <remap from="default_ego_motion_in_topic" to="/$(arg vehicle_ns)/$(arg perc_egomotion_topic)"/>
+        <remap from="objects_ground_truth_topic_with_ns" to="$(arg objects_ground_truth_topic_with_ns)"/>
+   </node>
+
+</launch>
