@@ -37,16 +37,4 @@
         <remap from="default_desired_motion_out_topic" to="$(arg desired_motion_topic_with_ns)"/>
    </node>
 
-   <node pkg="sim_sample_planning_ros_tool" type="planner_rviz" name="planner_rviz" output="screen">
-
-        <!-- Set Parameters -->
-        <param name="vehicle_id" value="$(arg vehicle_id)" />
-        <param name="vehicle_ns" value="$(arg vehicle_ns)"/>
-
-        <!-- Remap Topics -->
-        <remap from="default_desired_motion_in_topic" to="$(arg desired_motion_topic_with_ns)"/>
-        <remap from="default_ego_motion_in_topic" to="/$(arg vehicle_ns)/$(arg perc_egomotion_topic)"/>
-        <remap from="objects_ground_truth_topic_with_ns" to="$(arg objects_ground_truth_topic_with_ns)"/>
-   </node>
-
 </launch>

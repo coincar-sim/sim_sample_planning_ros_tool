@@ -1,16 +1,8 @@
 # sim_sample_planning_ros_tool
 Sample planning module for a vehicle in the simulation framework.
 
-Consists of a trajectory planner, a visualization of the latter and a sample actor:
-
 #### planner
 * plans a trajectory with a constant offset of the lanelet bound
-
-#### planner_rviz
-* visualizes the planned trajectory in rviz
-
-#### actor_single_track_model (_not implemented yet_)
-* computes the trajectory from velocity and steering angle
 
 ## Installation
 * this package is part of the simulation framework
@@ -26,7 +18,7 @@ Consists of a trajectory planner, a visualization of the latter and a sample act
 
   * **objects_ground_truth_topic_with_ns**: Topic under which the ground truth states of the objects are received
   * **desired_motion_topic_with_ns**: Topic under which the desired motion of the vehicle is published
-  * **perc_egomotion_topic**: Topic for the percepted ego motion state
+  * **perc_egomotion_topic**: Topic for the perceived ego motion state
   * **pred_plan_obj_topic**: Topic for the predicted objects
   * **internal_communication_subns**: Subnamespace for vehicle-internal communication
 
