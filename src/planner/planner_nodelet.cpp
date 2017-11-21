@@ -16,4 +16,7 @@ void PlannerNodelet::onInit() {
 
 } // namespace sim_sample_planning_ros_tool
 
-PLUGINLIB_DECLARE_CLASS(sim_sample_planning_ros_tool, PlannerNodelet, sim_sample_planning_ros_tool::PlannerNodelet, nodelet::Nodelet);
+PLUGINLIB_DECLARE_CLASS(sim_sample_planning_ros_tool,
+                        PlannerNodelet,
+                        sim_sample_planning_ros_tool::PlannerNodelet,
+                        nodelet::Nodelet);

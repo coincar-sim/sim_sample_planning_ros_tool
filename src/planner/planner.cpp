@@ -54,8 +54,7 @@ void Planner::egoMotionCallback(const automated_driving_msgs::MotionState::Const
 }
 
 
-void Planner::predictedObjectsCallback(
-    const automated_driving_msgs::ObjectStateArray::ConstPtr& msg) {
+void Planner::predictedObjectsCallback(const automated_driving_msgs::ObjectStateArray::ConstPtr& msg) {
 
     predictedObjectArray_ = *msg;
 }
@@ -81,16 +80,14 @@ void Planner::doPlanning() {
 
     // get most likely lanelet
     if (currentLaneletId_ != 0) {
-        currentLaneletId_ = theMap_.getMostLikelyLaneletIdByPreviousLaneletId(
-            egoMotionState_, currentLaneletId_, laneletIds);
-    } else {
         currentLaneletId_ =
-            theMap_.getMostLikelyLaneletIdByOrientation(egoMotionState_, laneletIds);
+            theMap_.getMostLikelyLaneletIdByPreviousLaneletId(egoMotionState_, currentLaneletId_, laneletIds);
+    } else {
+        currentLaneletId_ = theMap_.getMostLikelyLaneletIdByOrientation(egoMotionState_, laneletIds);
     }
 
     // get an arbitrary lanelet sequence
-    std::vector<int32_t> laneletSeq =
-        theMap_.getArbitraryLaneletSequence(currentLaneletId_, planningHorizon);
+    std::vector<int32_t> laneletSeq = theMap_.getArbitraryLaneletSequence(currentLaneletId_, planningHorizon);
 
     // get the path from this sequence
     util_geometry::polygon_t path;
@@ -98,14 +95,13 @@ void Planner::doPlanning() {
 
     // get the resulting target path (starting at current pose)
     util_geometry::polygon_t targetPath;
-    size_t closestId = util_geometry::getClosestId(
-        util_geometry::getEigenVector2dFromMotionState(egoMotionState_), path);
+    size_t closestId =
+        util_geometry::getClosestId(util_geometry::getEigenVector2dFromMotionState(egoMotionState_), path);
     util_geometry::splitPolygonRight(path, closestId, targetPath);
 
     // get the resulting trajectory (starting at current pose)
-    simulation_only_msgs::DeltaTrajectoryWithID deltaTraj =
-        planner_.deltaTrajFromMotionStateAndPathAndVelocity(
-            egoMotionState_, targetPath, params_.v_desired, params_.vehicle_id, ros::Time::now());
+    simulation_only_msgs::DeltaTrajectoryWithID deltaTraj = planner_.deltaTrajFromMotionStateAndPathAndVelocity(
+        egoMotionState_, targetPath, params_.v_desired, params_.vehicle_id, ros::Time::now());
 
     desiredMotionPub_.publish(deltaTraj);
 }
