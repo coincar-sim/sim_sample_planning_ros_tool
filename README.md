@@ -2,11 +2,11 @@
 Sample planning module for a vehicle in the simulation framework.
 
 #### planner
-* plans a trajectory with a constant offset of the lanelet bound
+* plans a trajectory with a constant offset of the lanelet bound, not collision free!
 
 ## Installation
 * this package is part of the simulation framework
-* see simulation_management_ros_tool for installation and more details
+* see [coincarsim_getting_started](https://github.com/coincar-sim/coincarsim_getting_started) for installation and more details
 
 ## Usage
 * started within the a vehicle launchfile of the simulation_initialization_ros_tool
@@ -23,16 +23,19 @@ Sample planning module for a vehicle in the simulation framework.
   * **internal_communication_subns**: Subnamespace for vehicle-internal communication
 
   * **lanelet_map_filename**: Filename (including path) of the lanelet map
+  * **navsatfix_topic**: Topic for initialization of coordinate transform lib
   * **v_desired**: Desired velocity (in m/s)
   * **const_offset**: Constant offset of the lanelet bound (in m)
 
 ## Contribution
-
 * fork this repo
 * use your own planning algorithms for generating a delta trajectory
 * ensure that
   * `$(arg desired_motion_topic_with_ns)` is published
-  * all internal ROS communication stays within the perception namespace
+  * all internal ROS communication stays within the planning namespace
+
+## Contributors
+Nick Engelhardt, Maximilian Naumann
 
 ## License
-Contact the maintainer.
+This package is distributed under the 3-Clause BSD License, see [LICENSE](LICENSE).

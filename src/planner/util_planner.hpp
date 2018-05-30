@@ -30,59 +30,36 @@
 
 #pragma once
 
-#include <dynamic_reconfigure/server.h>
-#include <geodesy/utm.h>
-#include <geographic_msgs/GeoPoint.h>
 #include <ros/ros.h>
-#include <std_msgs/Header.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/transform_listener.h>
-#include <memory>
-
-// raises errors if put below
-#include "util_planner.hpp"
-#include <util_lanelet/util_lanelet.hpp>
 
 #include <automated_driving_msgs/MotionState.h>
-#include <automated_driving_msgs/ObjectStateArray.h>
 #include <simulation_only_msgs/DeltaTrajectoryWithID.h>
 
-#include "sim_sample_planning_ros_tool/PlannerParameters.h"
+#include <util_eigen_geometry/util_eigen_geometry.hpp>
 
+namespace util_planner {
 
-namespace sim_sample_planning_ros_tool {
-
-class Planner {
+class offset_planner {
 public:
-    Planner(ros::NodeHandle, ros::NodeHandle);
+    offset_planner();
+
+    void setDebugFolder(std::string foldername);
+
+    simulation_only_msgs::DeltaTrajectoryWithID deltaTrajFromMotionStateAndPathAndVelocity(
+        const automated_driving_msgs::MotionState& egoMotionState,
+        const util_eigen_geometry::polygon_t& path,
+        const double velocity,
+        const int32_t objectId,
+        const ros::Time& timestamp);
 
 private:
-    ros::Publisher desiredMotionPub_;
-    ros::Subscriber egoMotionSub_;
-    ros::Subscriber predictedObjectsSub_;
-
-    int32_t currentLaneletId_ = 0;
-
-    automated_driving_msgs::MotionState egoMotionState_;
-    automated_driving_msgs::ObjectStateArray predictedObjectArray_;
-
-    dynamic_reconfigure::Server<PlannerConfig> reconfigSrv_; // Dynamic reconfiguration service
-
-    PlannerParameters params_;
-
-    tf2_ros::Buffer tfBuffer_;
-    tf2_ros::TransformListener tfListener_;
-    tf2_ros::TransformBroadcaster tfBroadcaster_;
-
-    std::shared_ptr<util_lanelet::lanelet_map_wrapper> theMapPtr_;
-    util_planner::offset_planner planner_;
-    ros::Time tsLastPlan_;
-
-    void egoMotionCallback(const automated_driving_msgs::MotionState::ConstPtr& msg);
-    void predictedObjectsCallback(const automated_driving_msgs::ObjectStateArray::ConstPtr& msg);
-    void reconfigureRequest(PlannerConfig&, uint32_t);
-
-    void doPlanning();
+    std::string debugFolder_;
 };
 
-} // namespace sim_sample_planning_ros_tool
+geometry_msgs::Point pointFromVector2d(const Eigen::Vector2d& point);
+
+void motionStateToCsvFile(const automated_driving_msgs::MotionState& motionState, std::string filename);
+
+void deltaTrajectoryToCsvFile(const simulation_only_msgs::DeltaTrajectoryWithID& deltaTrajWithID, std::string filename);
+
+} // namespace util_planner

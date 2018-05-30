@@ -1,19 +1,57 @@
+/*
+ * Copyright (c) 2017
+ * FZI Forschungszentrum Informatik, Karlsruhe, Germany (www.fzi.de)
+ * KIT, Institute of Measurement and Control, Karlsruhe, Germany (www.mrt.kit.edu)
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software without
+ *    specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include <util_eigen_geometry/util_eigen_geometry.hpp>
+
 #include "planner.hpp"
 
 namespace sim_sample_planning_ros_tool {
 
 Planner::Planner(ros::NodeHandle node_handle, ros::NodeHandle private_node_handle)
-        : reconfigSrv_{private_node_handle}, params_{private_node_handle}, tfListener_{tfBuffer_},
-          theMap_{(params_.fromParamServer(), params_.lanelet_map_filename)} {
+        : reconfigSrv_{private_node_handle}, params_{private_node_handle}, tfListener_{tfBuffer_} {
 
     /**
      * Initialization
      */
+    params_.fromParamServer();
+
+    std::shared_ptr<util_geo_coordinates::CoordinateTransformRos> coordinateTransformPtr = std::make_shared<util_geo_coordinates::CoordinateTransformRos>();
+    coordinateTransformPtr->waitForInit(params_.navsatfix_topic, 10.);
+    theMapPtr_ = std::make_shared<util_lanelet::lanelet_map_wrapper>(params_.lanelet_map_filename, coordinateTransformPtr);
+    theMapPtr_->setDebugFolder(params_.debug_directory);
+    theMapPtr_->initializeBoundaryPolygons();
+    theMapPtr_->calculateOffsetPolygons(LLet::RIGHT, params_.const_offset);
     planner_.setDebugFolder(params_.debug_directory);
-    theMap_.setDebugFolder(params_.debug_directory);
-    theMap_.setUtmZoneAndBand(32, 'U');
-    theMap_.initializeBoundaryPolygons();
-    theMap_.calculateOffsetPolygons(LLet::RIGHT, params_.const_offset);
+
+
+    tsLastPlan_.fromSec(0);
 
     /**
      * Set up dynamic reconfiguration
@@ -38,7 +76,7 @@ Planner::Planner(ros::NodeHandle node_handle, ros::NodeHandle private_node_handl
                                                  this,
                                                  ros::TransportHints().tcpNoDelay());
 
-    if (!theMap_.containsLanelets()) {
+    if (!theMapPtr_->containsLanelets()) {
         ROS_ERROR("%s: Error loading lanelet map! Filename was \"%s\". Stopping this node!",
                   ros::this_node::getName().c_str(),
                   params_.lanelet_map_filename.c_str());
@@ -67,10 +105,14 @@ void Planner::reconfigureRequest(PlannerConfig& config, uint32_t level) {
 }
 
 void Planner::doPlanning() {
+    if ((ros::Time::now()-tsLastPlan_).toSec() < 1./params_.max_planning_frequency) {
+        return;
+    }
+    tsLastPlan_ = ros::Time::now();
     double planningHorizon = 100.0; // params_.v_desired * 20.0;
 
     // get list of possible lanelets
-    std::vector<int32_t> laneletIds = theMap_.getLaneletsFromMotionState(egoMotionState_);
+    std::vector<int32_t> laneletIds = theMapPtr_->getLaneletsFromMotionState(egoMotionState_);
     if (laneletIds.size() == 0) {
         ROS_ERROR("%s: Planner::doPlanning for object_id %s: did not find any lanelet! ",
                   ros::this_node::getName().c_str(),
@@ -81,23 +123,24 @@ void Planner::doPlanning() {
     // get most likely lanelet
     if (currentLaneletId_ != 0) {
         currentLaneletId_ =
-            theMap_.getMostLikelyLaneletIdByPreviousLaneletId(egoMotionState_, currentLaneletId_, laneletIds);
+            theMapPtr_->getMostLikelyLaneletIdByPreviousLaneletId(egoMotionState_, currentLaneletId_, laneletIds);
     } else {
-        currentLaneletId_ = theMap_.getMostLikelyLaneletIdByOrientation(egoMotionState_, laneletIds);
+        currentLaneletId_ = theMapPtr_->getMostLikelyLaneletIdByOrientation(egoMotionState_, laneletIds);
     }
 
     // get an arbitrary lanelet sequence
-    std::vector<int32_t> laneletSeq = theMap_.getArbitraryLaneletSequence(currentLaneletId_, planningHorizon);
+    std::vector<int32_t> laneletSeq = theMapPtr_->getArbitraryLaneletSequence(currentLaneletId_, planningHorizon);
 
     // get the path from this sequence
-    util_geometry::polygon_t path;
-    theMap_.getOffsetPolygon(path, laneletSeq);
+    util_eigen_geometry::polygon_t path;
+    theMapPtr_->getOffsetPolygon(path, laneletSeq);
 
     // get the resulting target path (starting at current pose)
-    util_geometry::polygon_t targetPath;
+    util_eigen_geometry::polygon_t targetPath;
+    Eigen::Vector2d position2d{egoMotionState_.pose.pose.position.x, egoMotionState_.pose.pose.position.y};
     size_t closestId =
-        util_geometry::getClosestId(util_geometry::getEigenVector2dFromMotionState(egoMotionState_), path);
-    util_geometry::splitPolygonRight(path, closestId, targetPath);
+        util_eigen_geometry::getClosestId(position2d, path);
+    util_eigen_geometry::splitPolygonRight(path, closestId, targetPath);
 
     // get the resulting trajectory (starting at current pose)
     simulation_only_msgs::DeltaTrajectoryWithID deltaTraj = planner_.deltaTrajFromMotionStateAndPathAndVelocity(

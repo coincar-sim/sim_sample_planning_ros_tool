@@ -1,4 +1,4 @@
-#pkg_version=2.0
+set(MRT_PKG_VERSION 2.2)
 # Modify only if you know what you are doing!
 cmake_minimum_required(VERSION 2.8.12)
 project(sim_sample_planning_ros_tool)
@@ -9,7 +9,6 @@ project(sim_sample_planning_ros_tool)
 find_package(mrt_cmake_modules REQUIRED)
 include(UseMrtStdCompilerFlags)
 include(UseMrtAutoTarget)
-include(MrtParamGenerator)
 
 include(GatherDeps)
 # Remove libs which cannot be found automatically
@@ -18,6 +17,9 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 
 # Manually resolve removed dependend packages
 #find_package(...)
+
+# Mark files or folders for display in IDEs
+mrt_add_to_ide(README.md .gitlab-ci.yml)
 
 ########################
 ## add python modules ##
@@ -44,10 +46,10 @@ if (ROS_GENERATE_MESSAGES)
 endif()
 
 # Generate dynamic reconfigure options
-file(GLOB CFG_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "cfg/*cfg")
-file(GLOB SRV_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "srv/*.srv")
-if (CFG_FILES)
-    generate_parameter_files()
+file(GLOB PARAMS_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "cfg/*.params" "cfg/*.cfg" "cfg/*.mrtcfg" "cfg/*.rosif")
+if (PARAMS_FILES)
+    generate_ros_parameter_files(${PARAMS_FILES})
+    generate_ros_interface_files(${PARAMS_FILES})
 endif ()
 
 ###################################
@@ -71,15 +73,13 @@ link_directories(
 
 glob_folders(SRC_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src")
 if (SRC_DIRECTORIES)
-    # Found subfolders, add executable and python modules for each subfolder
+    # Found subfolders, add executable for each subfolder
     foreach(SRC_DIR ${SRC_DIRECTORIES})
-        mrt_add_executable(${SRC_DIR} FOLDER "src/${SRC_DIR}")
-        mrt_add_nodelet(${SRC_DIR} FOLDER "src/${SRC_DIR}")
+        mrt_add_node_and_nodelet(${SRC_DIR} FOLDER "src/${SRC_DIR}")
     endforeach()
 else()
     # No subfolder found, add executable and python modules for src folder
-    mrt_add_executable(${PROJECT_NAME} FOLDER "src")
-    mrt_add_nodelet(${PROJECT_NAME} FOLDER "src")
+    mrt_add_node_and_nodelet(${PROJECT_NAME} FOLDER "src")
 endif()
 
 #############
@@ -96,5 +96,5 @@ if (CATKIN_ENABLE_TESTING)
     # Include header in src folder via src/<pkgname>/<myheader>.h
     include_directories("src")
     mrt_add_ros_tests(test)
-    catkin_add_nosetests(test DEPENDENCIES ${${PROJECT_NAME}_EXPORTED_TARGETS})
+    mrt_add_nosetests(test)
 endif()

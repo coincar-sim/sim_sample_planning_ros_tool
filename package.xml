@@ -3,7 +3,7 @@
   <version>0.5.0</version>
   <description>Sample planning module for a vehicle in the simulation framework.</description>
 
-  <license>contact-the-maintainer</license>
+  <license>BSD</license>
   <maintainer email="maximilian.naumann@kit.edu">Maximilian Naumann</maintainer>
 
   <buildtool_depend>catkin</buildtool_depend>
@@ -26,7 +26,10 @@
   <depend>simulation_only_msgs</depend>
   <depend>automated_driving_msgs</depend>
   <depend>sim_lanelet</depend>
-  <depend>simulation_utils</depend>
+  <depend>util_eigen_geometry</depend>
+  <depend>util_geometry_msgs</depend>
+  <depend>util_lanelet</depend>
+  <depend>util_geo_coordinates_ros</depend>
 
   <export>
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
