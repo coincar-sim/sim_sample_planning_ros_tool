@@ -2,7 +2,7 @@
 Sample planning module for a vehicle in the simulation framework.
 
 #### planner
-* plans a trajectory with a constant offset of the lanelet bound, not collision free!
+* plans a trajectory along the centerline of a lanelet sequence, not collision free!
 
 ## Installation
 * this package is part of the simulation framework
@@ -22,10 +22,10 @@ Sample planning module for a vehicle in the simulation framework.
   * **pred_plan_obj_topic**: Topic for the predicted objects
   * **internal_communication_subns**: Subnamespace for vehicle-internal communication
 
-  * **lanelet_map_filename**: Filename (including path) of the lanelet map
-  * **navsatfix_topic**: Topic for initialization of coordinate transform lib
   * **v_desired**: Desired velocity (in m/s)
   * **const_offset**: Constant offset of the lanelet bound (in m)
+
+* the lanelet2_map is retrieved via the package `lanelet2_interface_ros`
 
 ## Contribution
 * fork this repo
@@ -35,7 +35,7 @@ Sample planning module for a vehicle in the simulation framework.
   * all internal ROS communication stays within the planning namespace
 
 ## Contributors
-Nick Engelhardt, Maximilian Naumann
+Nick Engelhardt, Alexander Naumann, Maximilian Naumann
 
 ## License
 This package is distributed under the 3-Clause BSD License, see [LICENSE](LICENSE).

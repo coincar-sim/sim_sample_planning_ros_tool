@@ -10,10 +10,7 @@
    <arg name="pred_plan_obj_topic" />
    <arg name="internal_communication_subns" />
 
-   <arg name="lanelet_map_filename" />
-   <arg name="navsatfix_topic" />
    <arg name="v_desired" />
-   <arg name="const_offset" />
 
    <!-- Arguments that are defined here -->
    <arg name="actor_frequency" value="0.5" />
@@ -25,12 +22,7 @@
       	<param name="vehicle_id" value="$(arg vehicle_id)" />
         <param name="vehicle_ns" value="$(arg vehicle_ns)"/>
 
-        <param name="lanelet_map_filename" value="$(arg lanelet_map_filename)" />
-        <param name="navsatfix_topic" value="$(arg navsatfix_topic)" />
-        <param name="debug_directory" value="$(find sim_sample_planning_ros_tool)/res/debug/" />
-
         <param name="v_desired" value="$(arg v_desired)" />
-        <param name="const_offset" value="$(arg const_offset)" />
 
 
         <!-- Remap Topics -->

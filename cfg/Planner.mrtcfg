@@ -49,12 +49,9 @@ gen.add("vehicle_id", paramtype='int', description="Vehicle ID")
 gen.add("predicted_objects_in_topic", paramtype='std::string', description="Topicname for predicted objects", default="default_predicted_objects_in_topic")
 gen.add("ego_motion_in_topic", paramtype='std::string', description="Topicname for ego motion", default="default_ego_motion_in_topic")
 gen.add("desired_motion_out_topic", paramtype='std::string', description="Topicname of desired motion", default="default_desired_motion_out_topic")
-gen.add("lanelet_map_filename", paramtype='std::string', description="Filename of lanelet-map")
-gen.add("navsatfix_topic", paramtype='std::string', description="NavSatFix Topic for coordinate transform")
 gen.add("debug_directory", paramtype='std::string', description="Folder for debug data", default="/tmp")
 gen.add("v_desired", paramtype='double', description="desired velocity (in m/s)", min=0.01, max=100, configurable=True)
 gen.add("max_planning_frequency", paramtype='double', description="maximum (re)planning frequency (in Hz)", min=1., max=20., default=10., configurable=True)
-gen.add("const_offset", paramtype='double', description="constant offset to right bound (in m)")
 
 
 

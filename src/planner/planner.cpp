@@ -30,25 +30,29 @@
 
 #include <util_eigen_geometry/util_eigen_geometry.hpp>
 
+#include <lanelet2_interface_ros/lanelet2_interface_ros.hpp>
+
 #include "planner.hpp"
 
 namespace sim_sample_planning_ros_tool {
 
 Planner::Planner(ros::NodeHandle node_handle, ros::NodeHandle private_node_handle)
-        : reconfigSrv_{private_node_handle}, params_{private_node_handle}, tfListener_{tfBuffer_} {
+        : reconfigSrv_{private_node_handle}, params_{private_node_handle} {
 
     /**
      * Initialization
      */
     params_.fromParamServer();
 
-    std::shared_ptr<util_geo_coordinates::CoordinateTransformRos> coordinateTransformPtr = std::make_shared<util_geo_coordinates::CoordinateTransformRos>();
-    coordinateTransformPtr->waitForInit(params_.navsatfix_topic, 10.);
-    theMapPtr_ = std::make_shared<util_lanelet::lanelet_map_wrapper>(params_.lanelet_map_filename, coordinateTransformPtr);
-    theMapPtr_->setDebugFolder(params_.debug_directory);
-    theMapPtr_->initializeBoundaryPolygons();
-    theMapPtr_->calculateOffsetPolygons(LLet::RIGHT, params_.const_offset);
-    planner_.setDebugFolder(params_.debug_directory);
+    // Get lanelet map
+    lanelet2_interface_ros::Lanelet2InterfaceRos ll2if;
+    mapPtr_ = ll2if.waitForMapPtr(10, 30);
+    mapFrameId_ = ll2if.waitForFrameIdMap(10, 30);
+
+    // Get lanelet routing graph
+    lanelet::traffic_rules::TrafficRulesPtr trafficRules = lanelet::traffic_rules::TrafficRulesFactory::create(
+        lanelet::Locations::Germany, lanelet::Participants::Vehicle);
+    routingGraphPtr_ = lanelet::routing::RoutingGraph::build(*mapPtr_, *trafficRules);
 
 
     tsLastPlan_.fromSec(0);
@@ -76,10 +80,9 @@ Planner::Planner(ros::NodeHandle node_handle, ros::NodeHandle private_node_handl
                                                  this,
                                                  ros::TransportHints().tcpNoDelay());
 
-    if (!theMapPtr_->containsLanelets()) {
-        ROS_ERROR("%s: Error loading lanelet map! Filename was \"%s\". Stopping this node!",
-                  ros::this_node::getName().c_str(),
-                  params_.lanelet_map_filename.c_str());
+    if (mapPtr_->laneletLayer.empty()) {
+        ROS_ERROR("%s: Lanelet map does not contain any lanelets! Stopping this node!",
+                  ros::this_node::getName().c_str());
         node_handle.shutdown();
     }
 }
@@ -105,48 +108,27 @@ void Planner::reconfigureRequest(PlannerConfig& config, uint32_t level) {
 }
 
 void Planner::doPlanning() {
-    if ((ros::Time::now()-tsLastPlan_).toSec() < 1./params_.max_planning_frequency) {
+    if ((ros::Time::now() - tsLastPlan_).toSec() < 1. / params_.max_planning_frequency) {
+        return;
+    }
+    if (egoMotionState_.header.frame_id != mapFrameId_) {
+        ROS_ERROR_THROTTLE(5, "egoMotionState_.header.frame_id != mapFrameId_, not planning");
         return;
     }
     tsLastPlan_ = ros::Time::now();
-    double planningHorizon = 100.0; // params_.v_desired * 20.0;
+    double planningHorizon = 30.0; // params_.v_desired * 20.0;
 
-    // get list of possible lanelets
-    std::vector<int32_t> laneletIds = theMapPtr_->getLaneletsFromMotionState(egoMotionState_);
-    if (laneletIds.size() == 0) {
-        ROS_ERROR("%s: Planner::doPlanning for object_id %s: did not find any lanelet! ",
-                  ros::this_node::getName().c_str(),
-                  std::to_string(params_.vehicle_id).c_str());
-        return;
-    }
-
-    // get most likely lanelet
-    if (currentLaneletId_ != 0) {
-        currentLaneletId_ =
-            theMapPtr_->getMostLikelyLaneletIdByPreviousLaneletId(egoMotionState_, currentLaneletId_, laneletIds);
-    } else {
-        currentLaneletId_ = theMapPtr_->getMostLikelyLaneletIdByOrientation(egoMotionState_, laneletIds);
-    }
-
-    // get an arbitrary lanelet sequence
-    std::vector<int32_t> laneletSeq = theMapPtr_->getArbitraryLaneletSequence(currentLaneletId_, planningHorizon);
-
-    // get the path from this sequence
-    util_eigen_geometry::polygon_t path;
-    theMapPtr_->getOffsetPolygon(path, laneletSeq);
-
-    // get the resulting target path (starting at current pose)
+    // Call planner function
     util_eigen_geometry::polygon_t targetPath;
-    Eigen::Vector2d position2d{egoMotionState_.pose.pose.position.x, egoMotionState_.pose.pose.position.y};
-    size_t closestId =
-        util_eigen_geometry::getClosestId(position2d, path);
-    util_eigen_geometry::splitPolygonRight(path, closestId, targetPath);
+    std::tie(targetPath, currentLaneletId_) = util_planner::doPlanningExternal(
+        mapPtr_, routingGraphPtr_, egoMotionState_, currentLaneletId_, planningHorizon);
 
     // get the resulting trajectory (starting at current pose)
-    simulation_only_msgs::DeltaTrajectoryWithID deltaTraj = planner_.deltaTrajFromMotionStateAndPathAndVelocity(
+    simulation_only_msgs::DeltaTrajectoryWithID deltaTraj = util_planner::deltaTrajFromMotionStateAndPathAndVelocity(
         egoMotionState_, targetPath, params_.v_desired, params_.vehicle_id, ros::Time::now());
 
     desiredMotionPub_.publish(deltaTraj);
 }
+
 
 } // namespace sim_sample_planning_ros_tool

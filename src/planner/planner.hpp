@@ -30,25 +30,21 @@
 
 #pragma once
 
-#include <dynamic_reconfigure/server.h>
-#include <geodesy/utm.h>
-#include <geographic_msgs/GeoPoint.h>
-#include <ros/ros.h>
-#include <std_msgs/Header.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/transform_listener.h>
 #include <memory>
+#include <dynamic_reconfigure/server.h>
+#include <ros/ros.h>
 
-// raises errors if put below
-#include "util_planner.hpp"
-#include <util_lanelet/util_lanelet.hpp>
+#include <lanelet2_io/Io.h>
+#include <lanelet2_routing/RoutingGraph.h>
+#include <util_geometry_msgs/util_geometry_msgs.hpp>
+#include <lanelet2_core/primitives/Lanelet.h>
 
 #include <automated_driving_msgs/MotionState.h>
 #include <automated_driving_msgs/ObjectStateArray.h>
-#include <simulation_only_msgs/DeltaTrajectoryWithID.h>
 
-#include "sim_sample_planning_ros_tool/PlannerParameters.h"
+#include <sim_sample_planning_ros_tool/PlannerParameters.h>
 
+#include "util_planner.hpp"
 
 namespace sim_sample_planning_ros_tool {
 
@@ -61,7 +57,7 @@ private:
     ros::Subscriber egoMotionSub_;
     ros::Subscriber predictedObjectsSub_;
 
-    int32_t currentLaneletId_ = 0;
+    lanelet::Id currentLaneletId_ = 0;
 
     automated_driving_msgs::MotionState egoMotionState_;
     automated_driving_msgs::ObjectStateArray predictedObjectArray_;
@@ -70,12 +66,9 @@ private:
 
     PlannerParameters params_;
 
-    tf2_ros::Buffer tfBuffer_;
-    tf2_ros::TransformListener tfListener_;
-    tf2_ros::TransformBroadcaster tfBroadcaster_;
-
-    std::shared_ptr<util_lanelet::lanelet_map_wrapper> theMapPtr_;
-    util_planner::offset_planner planner_;
+    lanelet::LaneletMapConstPtr mapPtr_;
+    lanelet::routing::RoutingGraphPtr routingGraphPtr_;
+    std::string mapFrameId_;
     ros::Time tsLastPlan_;
 
     void egoMotionCallback(const automated_driving_msgs::MotionState::ConstPtr& msg);
