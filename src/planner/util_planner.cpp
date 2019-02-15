@@ -28,21 +28,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <util_geometry_msgs/util_geometry_msgs.hpp>
 
 #include "util_planner.hpp"
 
 namespace util_planner {
 
-offset_planner::offset_planner() {
-}
-
-void offset_planner::setDebugFolder(std::string foldername) {
-    debugFolder_ = foldername;
-}
-
-simulation_only_msgs::DeltaTrajectoryWithID offset_planner::deltaTrajFromMotionStateAndPathAndVelocity(
+simulation_only_msgs::DeltaTrajectoryWithID deltaTrajFromMotionStateAndPathAndVelocity(
     const automated_driving_msgs::MotionState& egoMotionState,
     const util_eigen_geometry::polygon_t& path,
     const double velocity,
@@ -114,29 +106,6 @@ simulation_only_msgs::DeltaTrajectoryWithID offset_planner::deltaTrajFromMotionS
     return deltaTraj;
 }
 
-void motionStateToCsvFile(const automated_driving_msgs::MotionState& motionState, std::string filename) {
-    std::ofstream csvFile;
-    csvFile.precision(10);
-    csvFile.open(filename);
-    csvFile << "pos.x"
-            << ","
-            << "pos.y"
-            << ","
-            << "pos.z"
-            << ","
-            << "orientation.x"
-            << ","
-            << "orientation.y"
-            << ","
-            << ".orientation.z"
-            << ","
-            << ".orientation.w" << std::endl;
-    csvFile << motionState.pose.pose.position.x << "," << motionState.pose.pose.position.y << ","
-            << motionState.pose.pose.position.z << "," << motionState.pose.pose.orientation.x << ","
-            << motionState.pose.pose.orientation.y << "," << motionState.pose.pose.orientation.z << ","
-            << motionState.pose.pose.orientation.w << std::endl;
-    csvFile.close();
-}
 
 geometry_msgs::Point pointFromVector2d(const Eigen::Vector2d& point) {
     geometry_msgs::Point rosPoint;

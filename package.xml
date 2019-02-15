@@ -16,20 +16,18 @@
   <depend>roslib</depend>
   <depend>nodelet</depend>
 
-  <depend>eigen</depend>
-  <depend>eigen_conversions</depend>
-  <depend>geodesy</depend>
   <depend>dynamic_reconfigure</depend>
   <depend>rosparam_handler</depend>
-  <depend>tf2_ros</depend>
-  <depend>tf2_geometry_msgs</depend>
+
   <depend>simulation_only_msgs</depend>
   <depend>automated_driving_msgs</depend>
-  <depend>sim_lanelet</depend>
   <depend>util_eigen_geometry</depend>
   <depend>util_geometry_msgs</depend>
-  <depend>util_lanelet</depend>
-  <depend>util_geo_coordinates_ros</depend>
+
+  <depend>lanelet2_io</depend>
+  <depend>lanelet2_core</depend>
+  <depend>lanelet2_routing</depend>
+  <depend>lanelet2_interface_ros</depend>
 
   <export>
     <nodelet plugin="${prefix}/nodelet_plugins.xml" />
