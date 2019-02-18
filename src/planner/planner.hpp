@@ -42,7 +42,7 @@
 #include <automated_driving_msgs/MotionState.h>
 #include <automated_driving_msgs/ObjectStateArray.h>
 
-#include <sim_sample_planning_ros_tool/PlannerParameters.h>
+#include <sim_sample_planning_ros_tool/PlannerInterface.h>
 
 #include "util_planner.hpp"
 
@@ -64,7 +64,7 @@ private:
 
     dynamic_reconfigure::Server<PlannerConfig> reconfigSrv_; // Dynamic reconfiguration service
 
-    PlannerParameters params_;
+    PlannerInterface params_;
 
     lanelet::LaneletMapConstPtr mapPtr_;
     lanelet::routing::RoutingGraphPtr routingGraphPtr_;

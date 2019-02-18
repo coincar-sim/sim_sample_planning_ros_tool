@@ -35,13 +35,13 @@ Use one of these commands to add parameters to your parameter struct.
         :return:
 
 """
-from mrt_cmake_modules.parameter_generator_catkin import *
+from rosinterface_handler.interface_generator_catkin import *
 
-gen = ParameterGenerator()
+gen = InterfaceGenerator()
 
 # ROS-specific
 gen.add("msg_queue_size", paramtype='int', description="Queusize for publisher", default=5, min=1)
-gen.add("verbosity", paramtype='std::string', description="Set logger level for this node", default="info")
+gen.add_verbosity_param(configurable=True)
 
 
 # Your Params here

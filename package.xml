@@ -17,7 +17,7 @@
   <depend>nodelet</depend>
 
   <depend>dynamic_reconfigure</depend>
-  <depend>rosparam_handler</depend>
+  <depend>rosinterface_handler</depend>
 
   <depend>simulation_only_msgs</depend>
   <depend>automated_driving_msgs</depend>
