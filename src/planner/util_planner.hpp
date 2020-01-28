@@ -82,7 +82,7 @@ inline void chooseLaneletIdByOrientation(const lanelet::LaneletMapConstPtr& theM
     double highestCosineSimilarity = -1.0;
     Eigen::Isometry3d eigenPose3d;
     util_geometry_msgs::conversions::fromMsg(egoMotionState_.pose.pose, eigenPose3d);
-    Eigen::Affine2d eigenPose = util_eigen_geometry::affine2dFromXYOfAffine3d(eigenPose3d);
+    Eigen::Isometry2d eigenPose = util_eigen_geometry::isometry2dFromXYOfIsometry3d(eigenPose3d);
 
     for (auto& laneletId : exactMatchesLaneletIds) {
         auto laneletLineString = lanelet::ConstLineString2d(theMapPtr->laneletLayer.get(laneletId).centerline());
