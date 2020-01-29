@@ -1,14 +1,13 @@
-set(MRT_PKG_VERSION 2.2.1)
+set(MRT_PKG_VERSION 3.0.1)
 # Modify only if you know what you are doing!
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.5.1)
 project(sim_sample_planning_ros_tool)
 
 ###################
-## find packages ##
+## Find packages ##
 ###################
 find_package(mrt_cmake_modules REQUIRED)
 include(UseMrtStdCompilerFlags)
-include(UseMrtAutoTarget)
 
 include(GatherDeps)
 # Remove libs which cannot be found automatically
@@ -18,12 +17,8 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 # Manually resolve removed dependend packages
 #find_package(...)
 
-# Mark files or folders for display in IDEs
-mrt_add_to_ide(README.md .gitlab-ci.yml msg)
-
-
 ########################
-## add python modules ##
+## Add python modules ##
 ########################
 # This adds a python module if located under src/{PROJECT_NAME)
 mrt_python_module_setup()
@@ -31,11 +26,10 @@ mrt_python_module_setup()
 ################################################
 ## Declare ROS messages, services and actions ##
 ################################################
-
 # Add message, service and action files
-glob_ros_files(add_message_files msg)
-glob_ros_files(add_service_files srv)
-glob_ros_files(add_action_files action)
+mrt_add_message_files(msg)
+mrt_add_service_files(srv)
+mrt_add_action_files(action)
 
 # Generate added messages and services with any dependencies listed here
 if (ROS_GENERATE_MESSAGES)
@@ -47,17 +41,16 @@ if (ROS_GENERATE_MESSAGES)
 endif()
 
 # Generate dynamic reconfigure options
-file(GLOB PARAMS_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "cfg/*.params" "cfg/*.cfg" "cfg/*.mrtcfg" "cfg/*.rosif")
+mrt_glob_files(PARAMS_FILES "cfg/*.params" "cfg/*.cfg" "cfg/*.mrtcfg" "cfg/*.rosif")
 if (PARAMS_FILES)
     generate_ros_parameter_files(${PARAMS_FILES})
     generate_ros_interface_files(${PARAMS_FILES})
-endif ()
+endif()
 
 ###################################
-## catkin specific configuration ##
+## Catkin specific configuration ##
 ###################################
-catkin_package(
-    )
+catkin_package()
 
 ###########
 ## Build ##
@@ -67,12 +60,11 @@ include_directories(
     ${mrt_INCLUDE_DIRS}
     ${catkin_INCLUDE_DIRS}
     )
-
 link_directories(
     ${mrt_LIBRARY_DIRS}
     )
 
-glob_folders(SRC_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src")
+mrt_glob_folders(SRC_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src")
 if (SRC_DIRECTORIES)
     # Found subfolders, add executable for each subfolder
     foreach(SRC_DIR ${SRC_DIRECTORIES})
