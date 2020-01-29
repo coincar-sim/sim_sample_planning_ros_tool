@@ -28,9 +28,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "planner.hpp"
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
+#include "planner.hpp"
 
 namespace sim_sample_planning_ros_tool {
 
@@ -46,5 +46,4 @@ void PlannerNodelet::onInit() {
 
 } // namespace sim_sample_planning_ros_tool
 
-PLUGINLIB_EXPORT_CLASS(sim_sample_planning_ros_tool::PlannerNodelet, 
-                       nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(sim_sample_planning_ros_tool::PlannerNodelet, nodelet::Nodelet);

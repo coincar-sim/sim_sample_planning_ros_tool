@@ -43,7 +43,7 @@ simulation_only_msgs::DeltaTrajectoryWithID deltaTrajFromMotionStateAndPathAndVe
 
     Eigen::Isometry3d egoPose3d;
     util_geometry_msgs::conversions::fromMsg(egoMotionState.pose.pose, egoPose3d);
-    Eigen::Affine2d egoPose = util_eigen_geometry::affine2dFromXYOfAffine3d(egoPose3d);
+    Eigen::Isometry2d egoPose = util_eigen_geometry::isometry2dFromXYOfIsometry3d(egoPose3d);
 
     // get the deltaPath (from egoPose view)
     util_eigen_geometry::polygon_t deltaPath;
