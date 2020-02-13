@@ -1,4 +1,4 @@
-<library path="lib/libplanner_nodelet">
+<library path="lib/libsim_sample_planning_ros_tool-planner-nodelet">
 <class name="sim_sample_planning_ros_tool/PlannerNodelet"
        type="sim_sample_planning_ros_tool::PlannerNodelet" base_class_type="nodelet::Nodelet">
   <description></description>
