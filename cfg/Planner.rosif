@@ -52,7 +52,12 @@ gen.add("desired_motion_out_topic", paramtype='std::string', description="Topicn
 gen.add("debug_directory", paramtype='std::string', description="Folder for debug data", default="/tmp")
 gen.add("v_desired", paramtype='double', description="desired velocity (in m/s)", min=0.01, max=100, configurable=True)
 gen.add("max_planning_frequency", paramtype='double', description="maximum (re)planning frequency (in Hz)", min=1., max=20., default=10., configurable=True)
+gen.add("lanelet_id_goal", paramtype='std::string', description="Lanelet ID of the goal lanelet; 0 means no goal; See also simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md", default=0)
+gen.add("drive_random_after_goal_reached", paramtype='bool', description="", default=True, configurable=True)
 
+# Publisher and subscriber (group name will show up in dynamic_reconfigure window)
+pub_sub = gen.add_group("Publisher and subscriber")
+pub_sub.add_publisher("object_removal_pub", message_type="simulation_only_msgs::ObjectRemoval", description="Publisher to remove the object at the end of the route")
 
 
 # DO NOT TOUCH THIS LINE

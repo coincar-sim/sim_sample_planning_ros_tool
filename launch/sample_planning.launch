@@ -6,14 +6,15 @@
 
    <arg name="objects_ground_truth_topic_with_ns" />
    <arg name="desired_motion_topic_with_ns" />
+   <arg name="object_removal_topic_with_ns" />
    <arg name="perc_egomotion_topic" />
    <arg name="pred_plan_obj_topic" />
    <arg name="internal_communication_subns" />
 
    <arg name="v_desired" />
+   <arg name="lanelet_id_goal" default="0" />
+   <arg name="drive_random_after_goal_reached" default="True" />
 
-   <!-- Arguments that are defined here -->
-   <arg name="actor_frequency" value="0.5" />
 
    <!-- Launch Nodes -->
    <node pkg="sim_sample_planning_ros_tool" type="planner" name="planner" output="screen" >
@@ -23,7 +24,10 @@
         <param name="vehicle_ns" value="$(arg vehicle_ns)"/>
 
         <param name="v_desired" value="$(arg v_desired)" />
+        <param name="lanelet_id_goal" value="$(arg lanelet_id_goal)" />
+        <param name="drive_random_after_goal_reached" value="$(arg drive_random_after_goal_reached)" />
 
+        <param name="object_removal_pub_topic" value="$(arg object_removal_topic_with_ns)" />
 
         <!-- Remap Topics -->
         <remap from="default_predicted_objects_in_topic" to="/$(arg vehicle_ns)/$(arg pred_plan_obj_topic)"/>

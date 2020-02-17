@@ -68,8 +68,11 @@ private:
 
     lanelet::LaneletMapConstPtr mapPtr_;
     lanelet::routing::RoutingGraphPtr routingGraphPtr_;
+    lanelet::traffic_rules::TrafficRulesPtr trafficRulesPtr_;
     std::string mapFrameId_;
     ros::Time tsLastPlan_;
+    std::vector<lanelet::ConstLanelet> laneletVector_;
+    bool goalAdded_{false};
 
     void egoMotionCallback(const automated_driving_msgs::MotionState::ConstPtr& msg);
     void predictedObjectsCallback(const automated_driving_msgs::ObjectStateArray::ConstPtr& msg);

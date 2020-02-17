@@ -28,9 +28,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <simulation_only_msgs/ObjectRemoval.h>
 #include <util_eigen_geometry/util_eigen_geometry.hpp>
 
 #include <lanelet2_interface_ros/lanelet2_interface_ros.hpp>
+#include <lanelet2_matching/LaneletMatching.h>
+#include <lanelet2_routing/Route.h>
+#include <lanelet2_routing/RoutingGraph.h>
+
 
 #include "planner.hpp"
 
@@ -50,9 +55,9 @@ Planner::Planner(ros::NodeHandle node_handle, ros::NodeHandle private_node_handl
     mapFrameId_ = ll2if.waitForFrameIdMap(10, 30);
 
     // Get lanelet routing graph
-    lanelet::traffic_rules::TrafficRulesPtr trafficRules = lanelet::traffic_rules::TrafficRulesFactory::create(
-        lanelet::Locations::Germany, lanelet::Participants::Vehicle);
-    routingGraphPtr_ = lanelet::routing::RoutingGraph::build(*mapPtr_, *trafficRules);
+    trafficRulesPtr_ = lanelet::traffic_rules::TrafficRulesFactory::create(lanelet::Locations::Germany,
+                                                                           lanelet::Participants::Vehicle);
+    routingGraphPtr_ = lanelet::routing::RoutingGraph::build(*mapPtr_, *trafficRulesPtr_);
 
 
     tsLastPlan_.fromSec(0);
@@ -112,23 +117,169 @@ void Planner::doPlanning() {
         return;
     }
     if (egoMotionState_.header.frame_id != mapFrameId_) {
-        ROS_ERROR_THROTTLE(5, "egoMotionState_.header.frame_id != mapFrameId_, not planning");
+        ROS_ERROR_STREAM_THROTTLE(5,
+                                  "egoMotionState_.header.frame_id (\"" << egoMotionState_.header.frame_id
+                                                                        << "\") != mapFrameId_ (\"" << mapFrameId_
+                                                                        << "\"), not planning");
         return;
     }
     tsLastPlan_ = ros::Time::now();
-    double planningHorizon = 30.0; // params_.v_desired * 20.0;
+    double desiredPlanningHorizonMeters = 30.0; // params_.v_desired * 20.0;
 
-    // Call planner function
-    util_eigen_geometry::polygon_t targetPath;
-    std::tie(targetPath, currentLaneletId_) = util_planner::doPlanningExternal(
-        mapPtr_, routingGraphPtr_, egoMotionState_, currentLaneletId_, planningHorizon);
+    lanelet::matching::ObjectWithCovariance2d matchingObj;
+    matchingObj.pose = util_planner::poseFromMotionState(egoMotionState_);
+    matchingObj.positionCovariance = matchingObj.positionCovariance.Identity(); // 1 m
+    matchingObj.vonMisesKappa = 1. / (10. / 180. * M_PI);                       // 10 degrees
 
-    // get the resulting trajectory (starting at current pose)
+    auto matches = lanelet::matching::getProbabilisticMatches(*mapPtr_, matchingObj, 1.);
+    matches = lanelet::matching::removeNonRuleCompliantMatches(matches, trafficRulesPtr_);
+
+    if (matches.empty()) {
+        ROS_ERROR_STREAM_THROTTLE(5, "Could not match ego vehicle to any lanelet, not planning");
+        return;
+    }
+
+    // Retrieve lanelet_id_goal, see simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md
+    long lanelet_id_goal = 0;
+    try {
+        std::string laneletIdGoalString = params_.lanelet_id_goal;
+        // Remove the substring "long" if present
+        size_t pos = laneletIdGoalString.find("long");
+        if (pos != std::string::npos) {
+            // If found then erase it
+            laneletIdGoalString.erase(pos, 4);
+        }
+        lanelet_id_goal = std::stol(laneletIdGoalString);
+    } catch (std::invalid_argument& e) {
+        ROS_ERROR_STREAM("Error reading goal lanelet id \""
+                         << params_.lanelet_id_goal << "\" from param server:\"" << e.what()
+                         << "\". See simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md. Throwing.");
+        throw e;
+    }
+
+    // Add goal if given and not yet added
+    if (!goalAdded_ && lanelet_id_goal != 0) {
+        assert(laneletVector_.empty());
+        lanelet::ConstLanelet goalLanelet;
+        try {
+            goalLanelet = mapPtr_->laneletLayer.get(lanelet_id_goal);
+        } catch (lanelet::LaneletError& e) {
+            ROS_ERROR_STREAM("Error retrieving goal lanelet with id \"" << lanelet_id_goal << "\" from map:\""
+                                                                        << e.what() << "\". Throwing.");
+            throw e;
+        }
+
+        lanelet::ConstLanelet currentLanelet = matches.at(0).lanelet;
+        auto route = routingGraphPtr_->getRoute(currentLanelet, goalLanelet, 0, false); // no lane changes
+        lanelet::Optional<lanelet::routing::LaneletPath> laneletPath = route->shortestPath();
+
+        if (!laneletPath.is_initialized()) {
+            ROS_ERROR_STREAM("Cannot reach goal lanelet " << goalLanelet.id() << " from current lanelet "
+                                                          << currentLanelet.id() << ". Throwing.");
+            throw std::runtime_error("Cannot reach goal lanelet " + std::to_string(goalLanelet.id()) +
+                                     " from current lanelet " + std::to_string(currentLanelet.id()));
+        }
+
+        auto remainingLane = laneletPath->getRemainingLane(laneletPath->front());
+        for (const auto& ll : remainingLane) {
+            laneletVector_.push_back(ll);
+        }
+
+        goalAdded_ = true;
+    }
+
+    // Add random route if desired
+    if (params_.drive_random_after_goal_reached) {
+        if (laneletVector_.empty()) {
+            // use best match
+            lanelet::ConstLanelet currentLanelet = matches.at(0).lanelet;
+            laneletVector_.push_back(currentLanelet);
+        }
+        while (!routingGraphPtr_->following(laneletVector_.back()).empty()) {
+            double length = util_planner::length(laneletVector_);
+            if (length > desiredPlanningHorizonMeters && laneletVector_.size() > 1) {
+                break;
+            }
+            laneletVector_.push_back(routingGraphPtr_->following(laneletVector_.back()).front());
+        }
+    }
+
+    if (laneletVector_.empty()) {
+        ROS_ERROR_STREAM(
+            "Could not determine route. Probably no goal lanelet given and random drive disabled. Throwing.");
+        std::runtime_error("Could not determine route. Probably no goal lanelet given and random drive disabled.");
+    }
+
+    // Find lanelet match along ego route and remove lanelets that we passed already
+    lanelet::ConstLanelet currentLanelet;
+    bool matchInVector{false};
+    for (const auto& match : matches) {
+        auto iter = std::find_if(
+            laneletVector_.begin(), laneletVector_.end(), [&](auto& llt) { return llt.id() == match.lanelet.id(); });
+        if (iter != laneletVector_.end()) {
+            currentLanelet = *iter;
+            matchInVector = true;
+            if (iter != laneletVector_.begin()) {
+                // remove lanelets that we passed already
+                laneletVector_.erase(laneletVector_.begin(), iter);
+            }
+            break;
+        }
+    }
+
+    if (!matchInVector) {
+        ROS_ERROR_STREAM("Could not match object to existing laneletVector. Throwing.");
+        std::runtime_error("Could not match object to existing laneletVector.");
+    }
+
+    assert(currentLanelet.id() == laneletVector_.at(0).id());
+    const double currentProjectionOnPath =
+        lanelet::geometry::toArcCoordinates(laneletVector_.at(0).centerline2d(), matchingObj.pose.translation()).length;
+
+    // Add random route if desired
+    if (params_.drive_random_after_goal_reached) {
+        while (!routingGraphPtr_->following(laneletVector_.back()).empty()) {
+            double length = util_planner::length(laneletVector_);
+            if (length > desiredPlanningHorizonMeters + currentProjectionOnPath && laneletVector_.size() > 1) {
+                break;
+            }
+            laneletVector_.push_back(routingGraphPtr_->following(laneletVector_.back()).front());
+        }
+    }
+
+    // Check if end of route reached
+    if (laneletVector_.size() == 1) {
+        ROS_INFO("Final lanelet reached, removing object.");
+        simulation_only_msgs::ObjectRemoval objectRemoval;
+        objectRemoval.header.stamp = ros::Time::now();
+        objectRemoval.object_id = params_.vehicle_id;
+        params_.object_removal_pub.publish(objectRemoval);
+        ros::shutdown();
+    }
+
+
+    // Path from centerline of laneletVector_
+    std::vector<lanelet::BasicPoint2d> pointVec;
+    lanelet::BasicLineString2d path;
+    for (const auto& ll : laneletVector_) {
+        for (const auto& pt : ll.centerline()) {
+            path.push_back(pt.basicPoint2d());
+        }
+    }
+
+    lanelet::BasicLineString2d targetPath;
+    for (const auto& pt : path) {
+        if (lanelet::geometry::toArcCoordinates(path, pt).length > currentProjectionOnPath) {
+            targetPath.push_back(pt);
+        }
+    }
+
+
+    // Get the resulting trajectory (starting at current pose)
     simulation_only_msgs::DeltaTrajectoryWithID deltaTraj = util_planner::deltaTrajFromMotionStateAndPathAndVelocity(
         egoMotionState_, targetPath, params_.v_desired, params_.vehicle_id, ros::Time::now());
 
     desiredMotionPub_.publish(deltaTraj);
 }
-
 
 } // namespace sim_sample_planning_ros_tool
