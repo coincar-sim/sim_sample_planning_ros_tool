@@ -124,7 +124,7 @@ void Planner::doPlanning() {
         return;
     }
     tsLastPlan_ = ros::Time::now();
-    double desiredPlanningHorizonMeters = 30.0; // params_.v_desired * 20.0;
+    double desiredPlanningHorizonMeters = params_.v_desired * params_.planning_horizon_secs;
 
     lanelet::matching::ObjectWithCovariance2d matchingObj;
     matchingObj.pose = util_planner::poseFromMotionState(egoMotionState_);
@@ -269,8 +269,12 @@ void Planner::doPlanning() {
 
     lanelet::BasicLineString2d targetPath;
     for (const auto& pt : path) {
-        if (lanelet::geometry::toArcCoordinates(path, pt).length > currentProjectionOnPath) {
+        double positionOfPointAlongPath = lanelet::geometry::toArcCoordinates(path, pt).length;
+        if (positionOfPointAlongPath > currentProjectionOnPath) {
             targetPath.push_back(pt);
+            if (positionOfPointAlongPath > desiredPlanningHorizonMeters + currentProjectionOnPath) {
+                break;
+            }
         }
     }
 
