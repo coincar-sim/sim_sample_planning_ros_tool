@@ -6,7 +6,7 @@
 
    <arg name="objects_ground_truth_topic_with_ns" />
    <arg name="desired_motion_topic_with_ns" />
-   <arg name="object_removal_topic_with_ns" />
+   <arg name="object_removal_topic_with_ns" default="/sim/object_removal" /><!-- default for backwards compatibility -->
    <arg name="perc_egomotion_topic" />
    <arg name="pred_plan_obj_topic" />
    <arg name="internal_communication_subns" />
