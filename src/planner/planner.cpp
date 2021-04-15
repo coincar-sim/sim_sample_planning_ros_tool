@@ -139,32 +139,14 @@ void Planner::doPlanning() {
         return;
     }
 
-    // Retrieve lanelet_id_goal, see simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md
-    long lanelet_id_goal = 0;
-    try {
-        std::string laneletIdGoalString = params_.lanelet_id_goal;
-        // Remove the substring "long" if present
-        size_t pos = laneletIdGoalString.find("long");
-        if (pos != std::string::npos) {
-            // If found then erase it
-            laneletIdGoalString.erase(pos, 4);
-        }
-        lanelet_id_goal = std::stol(laneletIdGoalString);
-    } catch (std::invalid_argument& e) {
-        ROS_ERROR_STREAM("Error reading goal lanelet id \""
-                         << params_.lanelet_id_goal << "\" from param server:\"" << e.what()
-                         << "\". See simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md. Throwing.");
-        throw e;
-    }
-
     // Add goal if given and not yet added
-    if (!goalAdded_ && lanelet_id_goal != 0) {
+    if (!goalAdded_ && params_.lanelet_id_goal != 0L) {
         assert(laneletVector_.empty());
         lanelet::ConstLanelet goalLanelet;
         try {
-            goalLanelet = mapPtr_->laneletLayer.get(lanelet_id_goal);
+            goalLanelet = mapPtr_->laneletLayer.get(params_.lanelet_id_goal);
         } catch (lanelet::LaneletError& e) {
-            ROS_ERROR_STREAM("Error retrieving goal lanelet with id \"" << lanelet_id_goal << "\" from map:\""
+            ROS_ERROR_STREAM("Error retrieving goal lanelet with id \"" << params_.lanelet_id_goal << "\" from map:\""
                                                                         << e.what() << "\". Throwing.");
             throw e;
         }
