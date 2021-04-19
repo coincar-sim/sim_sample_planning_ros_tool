@@ -23,7 +23,7 @@ Sample planning module for a vehicle in the simulation framework.
   * **internal_communication_subns**: Subnamespace for vehicle-internal communication
   * **v_desired**: Desired velocity (in m/s)
   * optional:
-     * **lanelet_id_goal**: The id of the lanelet to drive to (`0` means no goal; see [simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md](https://github.com/coincar-sim/simulation_initialization_ros_tool/doc/lanelet_id_roslaunch.md) for long ids)
+     * **lanelet_id_goal**: The id of the lanelet to drive to (`0` means no goal; see [rosinterface_handler/doc/HowToUseLongParameters.md](https://github.com/KIT-MRT/rosinterface_handler/doc/HowToUseLongParameters.md) for long ids)
      * **drive_random_after_goal_reached**: Whether or not to drive a random sequence after the goal has been reached
 
 
