@@ -189,7 +189,8 @@ void Planner::doPlanning() {
     if (laneletVector_.empty()) {
         ROS_ERROR_STREAM(
             "Could not determine route. Probably no goal lanelet given and random drive disabled. Throwing.");
-        std::runtime_error("Could not determine route. Probably no goal lanelet given and random drive disabled.");
+        throw std::runtime_error(
+            "Could not determine route. Probably no goal lanelet given and random drive disabled.");
     }
 
     // Find lanelet match along ego route and remove lanelets that we passed already
@@ -211,7 +212,7 @@ void Planner::doPlanning() {
 
     if (!matchInVector) {
         ROS_ERROR_STREAM("Could not match object to existing laneletVector. Throwing.");
-        std::runtime_error("Could not match object to existing laneletVector.");
+        throw std::runtime_error("Could not match object to existing laneletVector.");
     }
 
     assert(currentLanelet.id() == laneletVector_.at(0).id());
