@@ -1,3 +1,5 @@
+[![Build Status](https://api.travis-ci.org/coincar-sim/sim_sample_planning_ros_tool.svg)](https://travis-ci.org/coincar-sim/sim_sample_planning_ros_tool)
+
 # sim_sample_planning_ros_tool
 Sample planning module for a vehicle in the simulation framework.
 

@@ -1,0 +1,28 @@
+# Source dependencies (provided for the travis ci build)
+- git:
+    local-name: automated_driving_msgs
+    uri: https://github.com/fzi-forschungszentrum-informatik/automated_driving_msgs.git
+- git:
+    local-name: lanelet2
+    uri: https://github.com/fzi-forschungszentrum-informatik/Lanelet2.git
+- git:
+    local-name: lanelet2_interface_ros
+    uri: https://github.com/coincar-sim/lanelet2_interface_ros.git
+- git:
+    local-name: mrt_cmake_modules
+    uri: https://github.com/KIT-MRT/mrt_cmake_modules.git
+- git:
+    local-name: rosinterface_handler
+    uri: https://github.com/KIT-MRT/rosinterface_handler.git
+- git:
+    local-name: simulation_only_msgs
+    uri: https://github.com/coincar-sim/simulation_only_msgs.git
+- git:
+    local-name: util_automated_driving_msgs
+    uri: https://github.com/coincar-sim/util_automated_driving_msgs.git
+- git:
+    local-name: util_eigen_geometry
+    uri: https://github.com/coincar-sim/util_eigen_geometry.git
+- git:
+    local-name: util_geometry_msgs
+    uri: https://github.com/coincar-sim/util_geometry_msgs.git
