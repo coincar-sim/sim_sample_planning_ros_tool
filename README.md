@@ -17,15 +17,17 @@ Sample planning module for a vehicle in the simulation framework.
 * parameters that need to be passed to the launchfile `sample_planning.launch`:
   * **vehicle_id**: Id of the vehicle, needs to be unique within the framework
   * **vehicle_ns**: Namespace of the vehicle, needs to be unique within the framework
-
   * **objects_ground_truth_topic_with_ns**: Topic under which the ground truth states of the objects are received
+  * **object_removal_topic_with_ns**: Topic under which objects are removed (to remove the object once the goal is reached or the random sequence has ended)
   * **desired_motion_topic_with_ns**: Topic under which the desired motion of the vehicle is published
   * **perc_egomotion_topic**: Topic for the perceived ego motion state
   * **pred_plan_obj_topic**: Topic for the predicted objects
   * **internal_communication_subns**: Subnamespace for vehicle-internal communication
-
   * **v_desired**: Desired velocity (in m/s)
-  * **const_offset**: Constant offset of the lanelet bound (in m)
+  * optional:
+     * **lanelet_id_goal**: The id of the lanelet to drive to (`0` means no goal; see [rosinterface_handler/doc/HowToUseLongParameters.md](https://github.com/KIT-MRT/rosinterface_handler/blob/master/doc/HowToUseLongParameters.md) for long ids)
+     * **drive_random_after_goal_reached**: Whether or not to drive a random sequence after the goal has been reached
+
 
 * the lanelet2_map is retrieved via the package `lanelet2_interface_ros`
 
